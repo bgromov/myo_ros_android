@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:id="@+id/grp1">
+        <item
+            android:id="@+id/action_scan"
+            android:title="@string/search_myo" />
+        <item
+            android:id="@+id/action_myo_ids"
+            android:title="@string/static_myo_ids" />
+    </group>
+    <group android:id="@+id/grp2">
+        <item
+            android:id="@+id/action_ros_master"
+            android:title="@string/choose_ros_master" />
+    </group>
+
+</menu>
