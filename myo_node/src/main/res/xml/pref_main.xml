@@ -2,4 +2,9 @@
 <PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:key="prefs">
+    <Preference android:order="@android:integer/status_bar_notification_info_maxnum"
+        android:key="attach_myo"
+        android:title="Attach another Myo"
+        android:summary="Press the button and bring Myo close to the phone"
+        android:persistent="false"/>
 </PreferenceScreen>
