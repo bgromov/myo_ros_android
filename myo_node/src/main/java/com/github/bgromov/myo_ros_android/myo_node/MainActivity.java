@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.util.CircularArray;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -49,6 +50,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +66,7 @@ public class MainActivity extends RosActivity
     // We store each Myo object that we attach to in this list, so that we can keep track of the order we've seen
     // each Myo and give it a unique short identifier (see onAttach() and identifyMyo() below).
     private Map<Myo, MyoNode> mKnownMyoObjs = new HashMap<>();
+    private Set<Myo> mTimeSyncedMyos = new HashSet<>();
     private Map<String, MyoProperties> mMyoSettings;
     private int mMyoCount = 0;
     private Gson gson;
@@ -196,6 +199,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             StatusStamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(StatusStamped._TYPE);
 
@@ -217,6 +221,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             StatusStamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(StatusStamped._TYPE);
 
@@ -237,6 +242,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             StatusStamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(StatusStamped._TYPE);
 
@@ -254,6 +260,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             StatusStamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(StatusStamped._TYPE);
 
@@ -263,6 +270,7 @@ public class MainActivity extends RosActivity
 
             nodeMain.publishStatus(msg);
         }
+
         // onOrientationData() is called whenever a Myo provides its current orientation,
         // represented as a quaternion.
         @Override
@@ -272,14 +280,25 @@ public class MainActivity extends RosActivity
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
 
+            if (!nodeMain.time_synced_) {
+                nodeMain.syncToRosTime(timestamp);
+                return;
+            }
+
+//            org.ros.message.Time now = nodeMain.node_.getCurrentTime();
+//            Log.i("Myo" + nodeMain.getMyoID(), "Ros time: " + now + " Myo corrected time: " + nodeMain.myoToRosTime(timestamp)
+//                    + " Offset: " + now.subtract(nodeMain.myoToRosTime(timestamp)));
+
             QuaternionStamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(geometry_msgs.QuaternionStamped._TYPE);
 
             msg.getHeader().setStamp(nodeMain.myoToRosTime(timestamp));
 
-            msg.getQuaternion().setX(rotation.x());
-            msg.getQuaternion().setY(rotation.y());
-            msg.getQuaternion().setZ(rotation.z());
-            msg.getQuaternion().setW(rotation.w());
+            Quaternion q_n = rotation.normalized();
+
+            msg.getQuaternion().setX(q_n.x());
+            msg.getQuaternion().setY(q_n.y());
+            msg.getQuaternion().setZ(q_n.z());
+            msg.getQuaternion().setW(q_n.w());
 
             nodeMain.publishRotation(msg);
         }
@@ -290,6 +309,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             GestureStamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(GestureStamped._TYPE);
 
@@ -306,6 +326,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             Vector3Stamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(Vector3Stamped._TYPE);
 
@@ -324,6 +345,7 @@ public class MainActivity extends RosActivity
 
             MyoNode nodeMain = mKnownMyoObjs.get(myo);
             if (nodeMain.node_ == null) return;
+            if (!nodeMain.time_synced_) return;
 
             Vector3Stamped msg = nodeMain.node_.getTopicMessageFactory().newFromType(Vector3Stamped._TYPE);
 
@@ -360,7 +382,7 @@ public class MainActivity extends RosActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Stetho.initializeWithDefaults(this);
+//        Stetho.initializeWithDefaults(this);
 
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
 //        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);

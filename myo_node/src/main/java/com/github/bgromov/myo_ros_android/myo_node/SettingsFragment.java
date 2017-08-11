@@ -126,7 +126,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                 @Override
                 public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                     if (id != button.getLayoutResource()) {
-                        view.set
+//                        view.set
                     }
                     return false;
                 }
