@@ -156,6 +156,8 @@ public class MyoNode extends AbstractNodeMain {
         params_.getList("/idsia/myo/static_myo_ids", macs);
         params_.getBoolean("/idsia/myo/use_ros_timestamps", use_ros_timestamps_);
 
+        use_ros_timestamps_ = true;
+
         if (use_ros_timestamps_) Log.i("onStart", "Using ROS timestamps for Myo messages");
 
         for (int i = 0; i < macs.size(); i++) {

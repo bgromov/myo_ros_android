@@ -16,19 +16,24 @@
 
 package com.github.bgromov.myo_ros_android.myo_node;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.v4.util.CircularArray;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.ros.android.RosActivity;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
+import org.w3c.dom.Text;
 
 import android.util.Log;
 
@@ -76,6 +81,10 @@ public class MainActivity extends RosActivity
     private NodeConfiguration mNodeConfiguration;
 
     private SharedPreferences mPrefs;
+    private SensorManager mSensorManager;
+    private ImuPublisher imu_pub;
+    private PowerManager mPowerManager;
+//    private PowerManager.WakeLock wakeLock;
 
     public MainActivity() {
         super("Myo Node", "Myo Node");
@@ -152,6 +161,9 @@ public class MainActivity extends RosActivity
         // If you need to do some kind of per-Myo preparation before handling events, you can safely do it in onAttach().
         @Override
         public void onAttach(Myo myo, long timestamp) {
+//            // Acquire wake lock
+//            wakeLock.acquire();
+
             // The object for a Myo is unique - in other words, it's safe to compare two Myo references to
             // see if they're referring to the same Myo.
             // Add the Myo object to our list of known Myo devices. This list is used to implement identifyMyo() below so
@@ -174,11 +186,21 @@ public class MainActivity extends RosActivity
 
             // Now that we've added it to our list, get our short ID for it and print it out.
             Log.i("onAttach", "Attached to " + myo.getName() + " [" + myo.getMacAddress() + "], now known as Myo " + identifyMyo(myo) + ".");
+
+            TextView text_view = (TextView) findViewById(R.id.main_view);
+            String text = "";
+            for (Myo m : mKnownMyoObjs.keySet()) {
+                text += m.getName() + " [" + m.getMacAddress() + "]\n";
+            }
+            text_view.setText(text);
         }
 
         @Override
         public void onDetach(Myo myo, long timestamp) {
             removeMyo(myo);
+
+//            // Release wake lock
+//            wakeLock.release();
         }
 
         // onConnect() is called whenever a Myo has been connected.
@@ -407,6 +429,10 @@ public class MainActivity extends RosActivity
             return;
         }
         hub.setMyoAttachAllowance(99);
+
+        mSensorManager = (SensorManager)this.getSystemService(SENSOR_SERVICE);
+        mPowerManager = (PowerManager)this.getSystemService(Context.POWER_SERVICE);
+//        wakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName());
     }
 
     @Override
@@ -419,9 +445,21 @@ public class MainActivity extends RosActivity
             mNodeConfiguration = NodeConfiguration.newPublic(local_network_address.getHostAddress(), getMasterUri());
             mNodeExecutor = nodeMainExecutor;
 
+            imu_pub = new ImuPublisher(mSensorManager);
+            mNodeExecutor.execute(imu_pub, mNodeConfiguration);
+
             // Next, register for DeviceListener callbacks.
             Hub.getInstance().addListener(mListener);
-            onScanActionSelected();
+
+            if (mMyoSettings.keySet().size() != 0) {
+                for (String mac : mMyoSettings.keySet()) {
+                    Log.i("MyoNode", "Attempt to connect to " + mMyoSettings.get(mac).getName() + " [" + mac.toString() + "]");
+                    Hub.getInstance().attachByMacAddress(mac);
+                    SystemClock.sleep(1500);
+                }
+            } else {
+                onScanActionSelected();
+            }
         } catch (IOException e) {
             // Socket problem
             Log.e("MyoNode", "socket error trying to get networking information from the master uri");
