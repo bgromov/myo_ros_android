@@ -37,6 +37,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Looper;
+import android.util.Log;
 
 import org.ros.node.ConnectedNode;
 import org.ros.namespace.GraphName;

@@ -18,7 +18,8 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/icon"
-        android:label="@string/app_name">
+        android:label="@string/app_name"
+        android:name="MyoApp">
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden"

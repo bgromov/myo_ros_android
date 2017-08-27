@@ -469,12 +469,6 @@ public class MainActivity extends RosActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // We don't want any callbacks when the Activity is gone, so unregister the listener.
-        Hub.getInstance().removeListener(mListener);
-        if (isFinishing()) {
-            // The Activity is finishing, so shutdown the Hub. This will disconnect from the Myo.
-            Hub.getInstance().shutdown();
-        }
     }
 
     @Override
