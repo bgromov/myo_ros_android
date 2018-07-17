@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.SensorManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.SystemClock;
@@ -456,11 +457,20 @@ public class MainActivity extends RosActivity
             Hub.getInstance().addListener(mListener);
 
             if (mMyoSettings.keySet().size() != 0) {
-                for (String mac : mMyoSettings.keySet()) {
-                    Log.i("MyoNode", "Attempt to connect to " + mMyoSettings.get(mac).getName() + " [" + mac.toString() + "]");
-                    Hub.getInstance().attachByMacAddress(mac);
-                    SystemClock.sleep(1500);
-                }
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        while (mMyoSettings.keySet().size() != mKnownMyoObjs.keySet().size()) {
+                            for (String mac : mMyoSettings.keySet()) {
+                                Log.i("MyoNode", "Attempt to connect to " + mMyoSettings.get(mac).getName() + " [" + mac.toString() + "]");
+                                Hub.getInstance().attachByMacAddress(mac);
+                                SystemClock.sleep(1500);
+                            }
+                        }
+                        Log.i("MyoNode", "All listed Myos were found");
+                        return null;
+                    }
+                }.execute();
             } else {
                 onScanActionSelected();
             }
