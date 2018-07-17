@@ -27,6 +27,8 @@ import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -84,7 +86,7 @@ public class MainActivity extends RosActivity
     private SensorManager mSensorManager;
     private ImuPublisher imu_pub;
     private PowerManager mPowerManager;
-//    private PowerManager.WakeLock wakeLock;
+    private PowerManager.WakeLock wakeLock;
 
     public MainActivity() {
         super("Myo Node", "Myo Node");
@@ -116,6 +118,9 @@ public class MainActivity extends RosActivity
     }
 
     public MyoNode addMyo(Myo myo, long timestamp) {
+        // Acquire wake lock
+        wakeLock.acquire();
+
         MyoProperties props = new MyoProperties();
         props.id = identifyMyo(myo);
         props.name = myo.getName();
@@ -138,6 +143,9 @@ public class MainActivity extends RosActivity
             mKnownMyoObjs.remove(myo);
             mMyoSettings.remove(myo.getMacAddress());
             mPrefs.edit().putString("myos", gson.toJson(mMyoSettings)).apply();
+
+            // Release wake lock
+            wakeLock.release();
         }
     }
 
@@ -161,9 +169,6 @@ public class MainActivity extends RosActivity
         // If you need to do some kind of per-Myo preparation before handling events, you can safely do it in onAttach().
         @Override
         public void onAttach(Myo myo, long timestamp) {
-//            // Acquire wake lock
-//            wakeLock.acquire();
-
             // The object for a Myo is unique - in other words, it's safe to compare two Myo references to
             // see if they're referring to the same Myo.
             // Add the Myo object to our list of known Myo devices. This list is used to implement identifyMyo() below so
@@ -198,9 +203,6 @@ public class MainActivity extends RosActivity
         @Override
         public void onDetach(Myo myo, long timestamp) {
             removeMyo(myo);
-
-//            // Release wake lock
-//            wakeLock.release();
         }
 
         // onConnect() is called whenever a Myo has been connected.
@@ -407,7 +409,8 @@ public class MainActivity extends RosActivity
 //        Stetho.initializeWithDefaults(this);
 
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
-//        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+
         setContentView(R.layout.main);
 
         gson = new Gson();
@@ -433,6 +436,7 @@ public class MainActivity extends RosActivity
         mSensorManager = (SensorManager)this.getSystemService(SENSOR_SERVICE);
         mPowerManager = (PowerManager)this.getSystemService(Context.POWER_SERVICE);
 //        wakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName());
+        wakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getPackageName());
     }
 
     @Override
